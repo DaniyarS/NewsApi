@@ -5,41 +5,52 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import dev.dslam.newsapi.Constants
-import dev.dslam.newsapi.R
+import dev.dslam.newsapi.adapters.NewsListAdapter
+import dev.dslam.newsapi.databinding.FragmentEverythingBinding
 import dev.dslam.newsapi.viewModels.EverythingFragmentViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @AndroidEntryPoint
 class EverythingFragment : Fragment() {
 
+    private val viewModel by viewModels<EverythingFragmentViewModel>()
+    private var _binding: FragmentEverythingBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var newsListAdapter: NewsListAdapter
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_headlines, container, false)
+    ): View {
+        _binding = FragmentEverythingBinding.inflate(inflater, container, false)
+        return binding.root
     }
-
-    private val viewModel by viewModels<EverythingFragmentViewModel>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initRecycler()
         initViewModel()
     }
 
+    private fun initRecycler() {
+        binding.rvEverythingList.apply {
+            layoutManager = LinearLayoutManager(this.context)
+            newsListAdapter = NewsListAdapter()
+            adapter = newsListAdapter
+        }
+    }
+
     private fun initViewModel() {
-
-        viewModel.getEverythingObserver().observe(viewLifecycleOwner, {
-            if (!it.isNullOrEmpty()) {
-                Toast.makeText(this.requireContext(), "Данные получены", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(this.requireContext(), "Упс, что-то пошло не так :-(", Toast.LENGTH_LONG).show()
-            }
-        })
-
-        viewModel.loadEverything(search = Constants.TOPIC, apiKey = Constants.API_KEY)
+        lifecycleScope.launchWhenCreated {
+            viewModel.loadEverything(search = Constants.TOPIC, apiKey = Constants.API_KEY)
+                .collectLatest {
+                    newsListAdapter.submitData(it)
+                }
+        }
     }
 }

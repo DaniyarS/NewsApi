@@ -1,13 +1,12 @@
 package dev.dslam.newsapi.repository
 
-import androidx.lifecycle.MutableLiveData
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import dev.dslam.newsapi.local.FavoriteNewsDao
-import dev.dslam.newsapi.models.ApiResponse
 import dev.dslam.newsapi.models.Article
 import dev.dslam.newsapi.network.NewsApiService
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class NewsRepositoryImpl @Inject constructor(
@@ -16,69 +15,27 @@ class NewsRepositoryImpl @Inject constructor(
 ) : NewsRepository {
 
     override fun retrieveHeadline(
-        topHeadlinesList: MutableLiveData<List<Article>>,
         search: String,
-        apiKey: String
-    ) {
-        val call: Call<ApiResponse> =
-            newsApiService.getHeadlineNewses(topic = search, apiKey = apiKey)
-        call.enqueue(object : Callback<ApiResponse> {
-
-            //Сперва пытаемся получить данные из сети, если не получилось показываем лайкнутые
-            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                if (response.isSuccessful) {
-                    response.body()?.articles?.let { topHeadlinesList.postValue(it) }
-                } else {
-                    if (getFavoriteNews() != null) {
-                        topHeadlinesList.postValue(getFavoriteNews())
-                    } else {
-                        topHeadlinesList.postValue(null)
-                    }
-                }
-            }
-
-            //Показываем лайкнутые новости
-            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-                if (getFavoriteNews() != null) {
-                    topHeadlinesList.postValue(getFavoriteNews())
-                } else {
-                    topHeadlinesList.postValue(null)
-                }
-            }
-
-        })
+        apiKey: String,
+        pageSize: Int,
+        page: Int,
+        maxPageSize: Int
+    ) : Flow<PagingData<Article>> {
+        return Pager(config = PagingConfig(pageSize = pageSize, maxSize = maxPageSize),
+                pagingSourceFactory = { HeadlinePagingSource(newsApiService, search, apiKey) }).flow
     }
 
     override fun retrieveAll(
-        allNewsList: MutableLiveData<List<Article>>,
         search: String,
-        apiKey: String
-    ) {
-        val call: Call<ApiResponse> = newsApiService.getEverything(topic = search, apiKey = apiKey)
-        call.enqueue(object : Callback<ApiResponse> {
-            //Сперва пытаемся получить данные из сети, если не получилось показываем лайкнутые
-            override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                if (response.isSuccessful) {
-                    response.body()?.articles?.let { allNewsList.postValue(it) }
-                } else {
-                    if (getFavoriteNews() != null) {
-                        allNewsList.postValue(getFavoriteNews())
-                    } else {
-                        allNewsList.postValue(null)
-                    }
-                }
-            }
+        apiKey: String,
+        pageSize: Int,
+        page: Int,
+        maxPageSize: Int
+    ) : Flow<PagingData<Article>> {
+        val data =  Pager(config = PagingConfig(pageSize = pageSize, maxSize = maxPageSize),
+            pagingSourceFactory = { EverythingPagingSource(newsApiService, search, apiKey) })
 
-            //Показываем лайкнутые новости
-            override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-                if (getFavoriteNews() != null) {
-                    allNewsList.postValue(getFavoriteNews())
-                } else {
-                    allNewsList.postValue(null)
-                }
-            }
-
-        })
+        return data.flow
     }
 
     override fun saveFavoriteNews(article: Article) {
@@ -88,5 +45,4 @@ class NewsRepositoryImpl @Inject constructor(
     override fun getFavoriteNews(): List<Article>? {
         return favoriteNewsDao.getFavorite()
     }
-
 }
