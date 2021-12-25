@@ -6,8 +6,10 @@ import androidx.fragment.app.FragmentManager
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
+import dagger.hilt.android.AndroidEntryPoint
 import dev.dslam.newsapi.adapters.FragmentAdapter
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var viewPager: ViewPager

@@ -21,7 +21,7 @@ class FragmentAdapter(fragmentManager: FragmentManager) :
 
     override fun getItem(position: Int): Fragment = fragments[position]
 
-    override fun getPageTitle(position: Int): CharSequence? {
+    override fun getPageTitle(position: Int): CharSequence {
         when (position) {
             0 -> {
                 return Constants.TOP_HEADLINES

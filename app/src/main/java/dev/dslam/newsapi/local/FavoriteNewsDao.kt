@@ -1,0 +1,16 @@
+package dev.dslam.newsapi.local
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import dev.dslam.newsapi.models.Article
+
+@Dao
+interface FavoriteNewsDao {
+    @Query("SELECT * FROM articles")
+    fun getFavorite(): List<Article>?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertOnArticle(article: Article)
+}

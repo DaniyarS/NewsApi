@@ -1,34 +1,22 @@
 package dev.dslam.newsapi.fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
+import dev.dslam.newsapi.Constants
 import dev.dslam.newsapi.R
+import dev.dslam.newsapi.viewModels.HeadlinesFragmentViewModel
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [HeadlinesFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+@AndroidEntryPoint
 class HeadlinesFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private val viewModel by viewModels<HeadlinesFragmentViewModel>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,23 +26,24 @@ class HeadlinesFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_headlines, container, false)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment HeadlinesFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            HeadlinesFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        Toast.makeText(this.requireContext(), "initViewModel", Toast.LENGTH_SHORT).show()
+        initViewModel()
+    }
+
+    private fun initViewModel() {
+        Log.d("initViewModel", "ViewModel Start")
+        Toast.makeText(this.requireContext(), "initViewModel", Toast.LENGTH_SHORT).show()
+        viewModel.getHeadlines().observe(viewLifecycleOwner, {
+            Log.d("initViewModel", it.toString())
+            if (!it.isNullOrEmpty()) {
+                Toast.makeText(this.requireContext(), "Данные получены", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this.requireContext(), "Упс, что-то пошло не так :-(", Toast.LENGTH_LONG).show()
             }
+        })
+        viewModel.loadHeadlines(search = Constants.TOPIC, apiKey = Constants.API_KEY)
     }
 }
